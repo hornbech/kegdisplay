@@ -29,6 +29,8 @@ def decode_token(token: str) -> dict:
 def authenticate_user(username: str, password: str) -> bool:
     if username != ADMIN_USERNAME:
         return False
+    if not ADMIN_PASSWORD_HASH:
+        return False
     return verify_password(password, ADMIN_PASSWORD_HASH)
 
 
