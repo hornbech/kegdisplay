@@ -1,0 +1,26 @@
+/* frontend/src/app.css */
+:root {
+  --bg: #1a1a1a;
+  --card: #2a2a2a;
+  --accent: #C8860A;
+  --accent-light: #E8A020;
+  --text: #e8e0d0;
+  --text-muted: #888;
+  --success: #4a9e5c;
+  --warning: #C8860A;
+  --empty: #444;
+  --radius: 12px;
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+h1, h2, h3 { font-family: var(--font-heading); }
