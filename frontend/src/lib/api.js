@@ -1,5 +1,12 @@
-// frontend/src/lib/api.js
 const BASE = '/api';
+
+export class ApiError extends Error {
+  constructor(status, detail) {
+    super(detail?.detail ?? `HTTP ${status}`);
+    this.status = status;
+    this.detail = detail;
+  }
+}
 
 export const getToken = () => localStorage.getItem('keg_token');
 export const setToken = (t) => localStorage.setItem('keg_token', t);
@@ -11,7 +18,7 @@ async function request(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, { ...options, headers });
-  if (!res.ok) throw { status: res.status, detail: await res.json() };
+  if (!res.ok) throw new ApiError(res.status, await res.json());
   return res.json();
 }
 
