@@ -7,7 +7,7 @@
   --text: #e8e0d0;
   --text-muted: #888;
   --success: #4a9e5c;
-  --warning: #C8860A;
+  --warning: var(--accent);
   --empty: #444;
   --radius: 12px;
   --font-heading: 'Playfair Display', serif;
