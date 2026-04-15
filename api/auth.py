@@ -4,12 +4,23 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-SECRET_KEY = os.getenv("JWT_SECRET", "changeme")
 ALGORITHM = "HS256"
-EXPIRE_HOURS = int(os.getenv("JWT_EXPIRE_HOURS", "24"))
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
+
+
+def _secret_key() -> str:
+    return os.getenv("JWT_SECRET", "changeme")
+
+
+def _expire_hours() -> int:
+    return int(os.getenv("JWT_EXPIRE_HOURS", "24"))
+
+
+def _admin_username() -> str:
+    return os.getenv("ADMIN_USERNAME", "admin")
+
+
+def _admin_password_hash() -> str:
+    return os.getenv("ADMIN_PASSWORD_HASH", "")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
@@ -18,20 +29,21 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    to_encode["exp"] = datetime.now(timezone.utc) + timedelta(hours=EXPIRE_HOURS)
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    to_encode["exp"] = datetime.now(timezone.utc) + timedelta(hours=_expire_hours())
+    return jwt.encode(to_encode, _secret_key(), algorithm=ALGORITHM)
 
 
 def decode_token(token: str) -> dict:
-    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    return jwt.decode(token, _secret_key(), algorithms=[ALGORITHM])
 
 
 def authenticate_user(username: str, password: str) -> bool:
-    if username != ADMIN_USERNAME:
+    if username != _admin_username():
         return False
-    if not ADMIN_PASSWORD_HASH:
+    pw_hash = _admin_password_hash()
+    if not pw_hash:
         return False
-    return verify_password(password, ADMIN_PASSWORD_HASH)
+    return verify_password(password, pw_hash)
 
 
 def get_current_user(token: str) -> str:
