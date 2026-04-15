@@ -1,7 +1,7 @@
-<!-- frontend/src/lib/KegSvg.svelte -->
 <script>
   export let color = '#C8860A';
   export let status = 'empty';   // empty | conditioning | on_tap | archived
+  export let slot = 0;           // Used to guarantee unique clipPath ids across all 8 kegs
 
   // Fill level by status
   const fillMap = { empty: 0, conditioning: 85, on_tap: 70, archived: 20 };
@@ -15,11 +15,14 @@
   const bodyY = 20, bodyH = 100, bodyW = 60, bodyX = 10;
   $: fillH = (bodyH * fillPercent) / 100;
   $: fillY = bodyY + bodyH - fillH;
+
+  // Unique clip id per slot — prevents fill bleed when two kegs share status+color
+  $: clipId = `keg-clip-${slot}`;
 </script>
 
 <svg width={W} height={H} viewBox="0 0 {W} {H}" style="opacity:{opacity}">
   <defs>
-    <clipPath id="keg-clip-{status}-{color.replace('#','')}">
+    <clipPath id={clipId}>
       <rect x={bodyX} y={fillY} width={bodyW} height={fillH} />
     </clipPath>
   </defs>
@@ -32,12 +35,12 @@
   {#if fillPercent > 0}
     <rect x={bodyX} y={bodyY} width={bodyW} height={bodyH} rx="8"
           fill={fillColor}
-          clip-path="url(#keg-clip-{status}-{color.replace('#','')})"
+          clip-path="url(#{clipId})"
           style="transition: all 0.6s ease"/>
     <!-- Shine -->
     <rect x={bodyX + 8} y={fillY + 4} width="6" height={fillH - 8} rx="3"
           fill="rgba(255,255,255,0.15)"
-          clip-path="url(#keg-clip-{status}-{color.replace('#','')})"/>
+          clip-path="url(#{clipId})"/>
   {/if}
 
   <!-- Dome top -->

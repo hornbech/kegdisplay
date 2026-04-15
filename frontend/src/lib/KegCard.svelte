@@ -1,4 +1,3 @@
-<!-- frontend/src/lib/KegCard.svelte -->
 <script>
   import KegSvg from './KegSvg.svelte';
   export let keg;
@@ -16,7 +15,7 @@
   <div class="slot-badge">#{keg.slot}</div>
 
   <div class="keg-visual">
-    <KegSvg color={keg.color_hex} status={keg.status} />
+    <KegSvg color={keg.color_hex} status={keg.status} slot={keg.slot} />
   </div>
 
   {#if keg.status === 'empty'}
@@ -26,7 +25,7 @@
       <h3 class="beer-name">{keg.name}</h3>
       <p class="beer-style">{keg.style}</p>
       <div class="badges">
-        <span class="badge abv">{keg.abv.toFixed(1)}% ABV</span>
+        <span class="badge abv">{keg.abv != null ? keg.abv.toFixed(1) : '—'}% ABV</span>
         <span class="badge status" style="background:{statusColor[keg.status]}">
           {statusLabel[keg.status]}
         </span>
@@ -41,7 +40,7 @@
         <p class="notes">{keg.notes}</p>
       {/if}
       {#if keg.untappd_url}
-        <a href={keg.untappd_url} target="_blank" rel="noopener" class="untappd-link">
+        <a href={keg.untappd_url} target="_blank" rel="noopener" aria-label="View on Untappd" class="untappd-link">
           🍺 Untappd
         </a>
       {/if}
@@ -63,7 +62,7 @@
     position: relative;
     min-height: 280px;
   }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .card:not(.empty):hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
   .card.empty { opacity: 0.5; border-style: dashed; }
   .card.archived { opacity: 0.6; }
 
@@ -87,8 +86,14 @@
   .badge.status { color: #fff; }
 
   .date { font-size: 0.75rem; color: var(--text-muted); }
-  .notes { font-size: 0.75rem; color: var(--text-muted); font-style: italic;
-           max-height: 2.5em; overflow: hidden; text-overflow: ellipsis; margin-top: 0.25rem; }
+  .notes {
+    font-size: 0.75rem; color: var(--text-muted); font-style: italic;
+    margin-top: 0.25rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 
   .untappd-link {
     display: inline-block; margin-top: 0.4rem;
