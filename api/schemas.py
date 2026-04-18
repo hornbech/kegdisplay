@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from typing import Optional, Literal
 from datetime import datetime
 
-StatusEnum = Literal["empty", "conditioning", "on_tap", "archived"]
+StatusEnum = Literal["empty", "fermenting", "conditioning", "on_tap", "archived"]
 
 
 class KegBase(BaseModel):

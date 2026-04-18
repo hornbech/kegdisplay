@@ -64,7 +64,7 @@
     kegs = kegs.map(k => k.id === updated.id ? updated : k);
   }
 
-  const statusOptions = ['empty', 'conditioning', 'on_tap', 'archived'];
+  const statusOptions = ['empty', 'fermenting', 'conditioning', 'on_tap', 'archived'];
 
   // Beer styles ordered light → dark, colours picked from the SRM scale.
   const beerStyles = [
@@ -215,6 +215,7 @@
   .status-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; width: fit-content; }
   .status-badge.on_tap { background: #4a9e5c22; color: #4a9e5c; }
   .status-badge.conditioning { background: #C8860A22; color: #C8860A; }
+  .status-badge.fermenting { background: #d4652b22; color: #d4652b; }
   .status-badge.empty { background: #44444422; color: #666; }
   .status-badge.archived { background: #33333322; color: #555; }
   .keg-actions { display: flex; gap: 0.5rem; }

@@ -3,57 +3,101 @@
   import { recipeUrl } from './api.js';
   export let keg;
 
-  const statusLabel = { empty: 'Empty', conditioning: 'Conditioning', on_tap: 'On Tap', archived: 'Archived' };
-  const statusColor = { empty: '#555', conditioning: '#C8860A', on_tap: '#4a9e5c', archived: '#666' };
+  const today = new Date();
+
+  function daysSince(iso) {
+    if (!iso) return null;
+    return Math.floor((today - new Date(iso)) / 86400000);
+  }
+  function humanAge(days) {
+    if (days == null) return '—';
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 14) return `${days} days`;
+    if (days < 60) return `${Math.round(days / 7)} weeks`;
+    return `${Math.round(days / 30)} months`;
+  }
+  function fillLevelFor(k) {
+    if (k.status === 'empty') return 0;
+    if (k.status === 'archived') return 0.08;
+    if (k.status === 'conditioning') return 0.95;
+    if (k.status === 'fermenting') return 0.92;
+    const varied = { 1: 0.62, 2: 0.35, 3: 0.78, 4: 0.48, 5: 0.55, 6: 0.2, 7: 0.7, 8: 0.4 };
+    return varied[k.slot] ?? 0.55;
+  }
+
+  $: isEmpty = keg.status === 'empty';
+  $: isOnTap = keg.status === 'on_tap';
+  $: isArchived = keg.status === 'archived';
+  $: fill = fillLevelFor(keg);
+
+  $: primaryAge = (keg.status === 'conditioning' || keg.status === 'fermenting')
+    ? humanAge(daysSince(keg.brew_date))
+    : humanAge(daysSince(keg.tap_date));
+  $: ageLabel = {
+    on_tap: 'On tap',
+    conditioning: 'Conditioning',
+    fermenting: 'Fermenting',
+    archived: 'Kicked',
+  }[keg.status] ?? '';
 
   let showRecipe = false;
-
-  function formatDate(d) {
-    if (!d) return null;
-    return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
 </script>
 
-<div class="card" class:empty={keg.status === 'empty'} class:archived={keg.status === 'archived'}>
-  <div class="slot-badge">#{keg.slot}</div>
+<div class="card" class:empty={isEmpty} class:archived={isArchived}>
+  <div class="slot-tag" class:active={isOnTap}>TAP {String(keg.slot).padStart(2, '0')}</div>
 
-  <div class="keg-visual">
-    <KegSvg color={keg.color_hex} status={keg.status} slot={keg.slot} />
+  <div class="keg-viz">
+    <KegSvg color={keg.color_hex} status={keg.status} slot={keg.slot} size={110} {fill} />
   </div>
 
-  {#if keg.status === 'empty'}
-    <p class="empty-label">Empty</p>
-  {:else}
-    <div class="info">
-      <h3 class="beer-name">{keg.name}</h3>
-      <p class="beer-style">{keg.style}</p>
-      <div class="badges">
-        <span class="badge abv">{keg.abv != null ? keg.abv.toFixed(1) : '—'}% ABV</span>
-        {#if keg.ibu != null}<span class="badge meta">{keg.ibu} IBU</span>{/if}
-        {#if keg.ebc != null}<span class="badge meta">{keg.ebc} EBC</span>{/if}
-        <span class="badge status" style="background:{statusColor[keg.status]}">
-          {statusLabel[keg.status]}
-        </span>
+  <div class="info">
+    {#if isEmpty}
+      <div class="empty-slot">Pouring next…</div>
+    {:else}
+      <div class="style-caption">{keg.style}</div>
+      <h2 class="beer-name">{keg.name}</h2>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value accent">{keg.abv != null ? keg.abv.toFixed(1) : '—'}<span class="unit">%</span></div>
+          <div class="stat-label">ABV</div>
+        </div>
+        <div class="divider" />
+        <div class="stat">
+          <div class="stat-value">{primaryAge}</div>
+          <div class="stat-label">{ageLabel}</div>
+        </div>
+        <div class="divider" />
+        <div class="fill-col">
+          <div class="fill-bar">
+            <div class="fill-fill" style="width:{Math.round(fill * 100)}%; background:linear-gradient(90deg, {keg.color_hex}, {keg.color_hex}dd);" />
+          </div>
+          <div class="fill-meta">
+            <span>Fill</span>
+            <span class="fill-pct">{Math.round(fill * 100)}%</span>
+          </div>
+        </div>
       </div>
-      {#if keg.brew_date}
-        <p class="date">Brewed {formatDate(keg.brew_date)}</p>
+
+      {#if keg.ibu != null || keg.ebc != null || keg.untappd_url || keg.recipe_filename}
+        <div class="meta-row">
+          {#if keg.ibu != null}<span class="meta-item">{keg.ibu} IBU</span>{/if}
+          {#if keg.ebc != null}<span class="meta-item">{keg.ebc} EBC</span>{/if}
+          {#if keg.untappd_url}
+            <a class="meta-link" href={keg.untappd_url} target="_blank" rel="noopener">↗ Untappd</a>
+          {/if}
+          {#if keg.recipe_filename}
+            <button type="button" class="meta-link" on:click={() => showRecipe = true}>Recipe</button>
+          {/if}
+        </div>
       {/if}
-      {#if keg.tap_date}
-        <p class="date">Tapped {formatDate(keg.tap_date)}</p>
-      {/if}
+
       {#if keg.notes}
-        <p class="notes">{keg.notes}</p>
+        <p class="notes">"{keg.notes}"</p>
       {/if}
-      <div class="links">
-        {#if keg.untappd_url}
-          <a href={keg.untappd_url} target="_blank" rel="noopener" class="link-btn">🍺 Untappd</a>
-        {/if}
-        {#if keg.recipe_filename}
-          <button type="button" class="link-btn" on:click={() => showRecipe = true}>📄 Recipe</button>
-        {/if}
-      </div>
-    </div>
-  {/if}
+    {/if}
+  </div>
 </div>
 
 {#if showRecipe && keg.recipe_filename}
@@ -71,59 +115,127 @@
 
 <style>
   .card {
-    background: var(--card);
-    border-radius: var(--radius);
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    border: 1px solid #333;
-    transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
-    min-height: 280px;
+    background: linear-gradient(180deg, rgba(40,30,22,0.9), rgba(20,14,10,0.95));
+    border: 1px solid rgba(200,134,10,0.18);
+    border-radius: 4px;
+    padding: 22px 22px 20px;
+    display: flex;
+    gap: 20px;
+    min-height: 220px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 20px rgba(0,0,0,0.4);
   }
-  .card:not(.empty):hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-  .card.empty { opacity: 0.5; border-style: dashed; }
-  .card.archived { opacity: 0.6; }
+  .card.empty {
+    background: rgba(255,255,255,0.015);
+    border: 1.5px dashed rgba(154,134,104,0.3);
+    box-shadow: none;
+  }
+  .card.archived { opacity: 0.45; }
 
-  .slot-badge {
-    position: absolute; top: 8px; left: 8px;
-    background: #333; color: var(--text-muted);
-    font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;
+  .slot-tag {
+    position: absolute;
+    top: -1px;
+    left: 20px;
+    background: #3a3024;
+    color: #9a8668;
+    padding: 6px 14px 5px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    font-weight: 700;
+    font-family: 'Playfair Display', serif;
+  }
+  .slot-tag.active { background: #c8860a; color: #0f0907; }
+
+  .keg-viz { flex-shrink: 0; display: flex; align-items: center; }
+
+  .info { flex: 1; display: flex; flex-direction: column; padding-top: 14px; min-width: 0; }
+
+  .empty-slot {
+    margin: auto 0;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: #5a4a33;
   }
 
-  .keg-visual { margin: 0.5rem 0; }
+  .style-caption {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #9a8668;
+    margin-bottom: 4px;
+  }
 
-  .empty-label { color: var(--text-muted); font-size: 0.9rem; }
+  .beer-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1.05;
+    color: #f4e7c9;
+    letter-spacing: -0.5px;
+    margin-bottom: 14px;
+    overflow-wrap: break-word;
+  }
 
-  .info { width: 100%; text-align: center; }
-  .beer-name { font-family: var(--font-heading); font-size: 1.1rem; color: var(--accent-light); }
-  .beer-style { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+  .stats { display: flex; gap: 24px; margin-bottom: 10px; align-items: stretch; }
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1;
+    color: #f4e7c9;
+  }
+  .stat-value.accent { color: #c8860a; }
+  .stat-value .unit { font-size: 16px; margin-left: 2px; font-weight: 700; }
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #6a5a44;
+    margin-top: 2px;
+  }
+  .divider { width: 1px; background: rgba(200,134,10,0.2); }
+  .fill-col { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 60px; }
+  .fill-bar { height: 6px; background: rgba(200,134,10,0.12); border-radius: 3px; overflow: hidden; }
+  .fill-fill { height: 100%; transition: width 0.5s ease; }
+  .fill-meta {
+    display: flex; justify-content: space-between;
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: #6a5a44; margin-top: 6px;
+  }
+  .fill-pct { color: #9a8668; }
 
-  .badges { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.4rem; }
-  .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
-  .badge.abv { background: #333; color: var(--accent-light); }
-  .badge.meta { background: #2a2a2a; color: var(--text-muted); }
-  .badge.status { color: #fff; }
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 10px 14px;
+    margin-top: 4px; margin-bottom: 8px;
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: #6a5a44; font-weight: 600;
+  }
+  .meta-item { color: #9a8668; }
+  .meta-link {
+    background: none; border: none; padding: 0; cursor: pointer;
+    color: #c8860a; font: inherit; letter-spacing: 0.2em; text-transform: uppercase;
+    text-decoration: none; border-bottom: 1px dotted rgba(200,134,10,0.4);
+  }
+  .meta-link:hover { color: #e8a020; border-color: #e8a020; }
 
-  .date { font-size: 0.75rem; color: var(--text-muted); }
   .notes {
-    font-size: 0.75rem; color: var(--text-muted); font-style: italic;
-    margin-top: 0.25rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: #9a8668;
+    line-height: 1.45;
+    margin-top: auto;
+    border-top: 1px solid rgba(200,134,10,0.15);
+    padding-top: 10px;
   }
 
-  .links { display: flex; gap: 0.6rem; justify-content: center; margin-top: 0.4rem; flex-wrap: wrap; }
-  .link-btn {
-    font-size: 0.75rem; color: var(--accent);
-    text-decoration: none; border: none; background: none; padding: 0;
-    border-bottom: 1px dotted var(--accent); cursor: pointer;
+  @media (max-width: 700px) {
+    .card { gap: 14px; padding: 20px 18px 18px; }
+    .beer-name { font-size: 26px; }
+    .stat-value { font-size: 24px; }
+    .stats { gap: 16px; }
   }
-  .link-btn:hover { color: var(--accent-light); border-color: var(--accent-light); }
 
   .pdf-backdrop {
     position: fixed; inset: 0; background: rgba(0,0,0,0.85);
@@ -131,22 +243,22 @@
     z-index: 200; padding: 1rem;
   }
   .pdf-modal {
-    background: var(--card); border-radius: var(--radius); border: 1px solid #444;
+    background: #1a1613; border-radius: 4px; border: 1px solid rgba(200,134,10,0.25);
     width: 100%; max-width: 900px; height: 90vh;
     display: flex; flex-direction: column; overflow: hidden;
   }
   .pdf-header {
     display: flex; align-items: center; gap: 0.75rem;
-    padding: 0.75rem 1rem; border-bottom: 1px solid #333;
-    font-size: 0.85rem;
+    padding: 0.75rem 1rem; border-bottom: 1px solid rgba(200,134,10,0.15);
+    font-size: 0.85rem; color: #f4e7c9;
   }
-  .pdf-header strong { color: var(--accent-light); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pdf-open { color: var(--accent); text-decoration: none; font-size: 0.8rem; }
-  .pdf-open:hover { color: var(--accent-light); }
+  .pdf-header strong { color: #e8a020; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pdf-open { color: #c8860a; text-decoration: none; font-size: 0.8rem; }
+  .pdf-open:hover { color: #e8a020; }
   .pdf-close {
-    background: transparent; border: 1px solid #444; color: var(--text-muted);
+    background: transparent; border: 1px solid #4a3d2e; color: #9a8668;
     width: 28px; height: 28px; border-radius: 4px; cursor: pointer;
   }
-  .pdf-close:hover { border-color: var(--accent); color: var(--accent); }
+  .pdf-close:hover { border-color: #c8860a; color: #c8860a; }
   .pdf-frame { flex: 1; border: none; background: #fff; }
 </style>

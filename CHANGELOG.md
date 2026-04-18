@@ -5,6 +5,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.0] — 2026-04-18
+
+### Added
+
+- **`fermenting` keg status** (empty → fermenting → conditioning → on_tap → archived), with a dedicated admin dropdown option and status colour `#d4652b`
+
+### Changed
+
+- **Public display redesigned** — "Refined Craft Tavern" direction from the Claude Design handoff:
+  - Radial chalkboard background with brass accents
+  - "Bear Brew." wordmark in italic Playfair Display, with tagline (Est. 2019 · Copenhagen · Eight taps. No shortcuts.) and "currently pouring N/8" counter
+  - Ornate "TAP NN" slot tags (brass when on-tap)
+  - Stats row with hairline-divided ABV / age / fill meter
+  - Tasting notes styled as italic pull-quotes
+  - 2-column grid (responsive down to 1 column on mobile)
+- **Keg SVG upgraded** to a polished corny: gradient body and liquid, surface-highlight ellipse, vertical shine, brass pressure post — reused unchanged on the admin page
+
+---
+
 ## [1.2.0] — 2026-04-18
 
 ### Added
