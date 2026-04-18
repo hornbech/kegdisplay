@@ -24,7 +24,7 @@
 <main>
   <header>
     <div class="header-inner">
-      <div class="logo">🍺</div>
+      <div class="logo">🍻</div>
       <div>
         <h1>Bear Brew</h1>
         <p class="tagline">What's on tap</p>

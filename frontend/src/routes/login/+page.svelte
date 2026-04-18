@@ -23,7 +23,7 @@
 
 <div class="page">
   <div class="card">
-    <div class="logo">🍺</div>
+    <div class="logo">🍻</div>
     <h1>Admin Login</h1>
     <form on:submit|preventDefault={handleLogin}>
       <label>

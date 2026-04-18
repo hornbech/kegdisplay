@@ -14,7 +14,7 @@
 </script>
 
 <nav>
-  <a href="/">🍺 Display</a>
+  <a href="/">🍻 Display</a>
   <span>Admin</span>
   <button on:click={logout}>Logout</button>
 </nav>
