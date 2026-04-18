@@ -31,3 +31,10 @@ class Keg(Base):
 
     def __repr__(self):
         return f"<Keg slot={self.slot} name={self.name!r} status={self.status!r}>"
+
+
+class Stat(Base):
+    __tablename__ = "stats"
+
+    key = Column(Text, primary_key=True)
+    value = Column(Integer, nullable=False, default=0)

@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.0] — 2026-04-18
+
+### Added
+
+- **Info page** at `/info` with links to the API docs (`/api/docs`) and the GitHub project
+- **Visitor counter** persisted in a new `stats` key/value table; deduped per browser session
+- **Online-now counter** via lightweight heartbeat (20 s interval, 60 s presence window, in-memory)
+- New endpoints: `GET /api/stats`, `POST /api/stats/visit`, `POST /api/stats/heartbeat`
+- Header now shows an Info link alongside Admin
+
+---
+
 ## [1.1.0] — 2026-04-18
 
 ### Added

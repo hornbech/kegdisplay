@@ -1,12 +1,14 @@
 <!-- frontend/src/routes/+page.svelte -->
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import KegCard from '$lib/KegCard.svelte';
   import { fetchKegs } from '$lib/api.js';
+  import { startHeartbeat, recordVisitOnce } from '$lib/presence.js';
 
   let kegs = [];
   let error = null;
   let loading = true;
+  let stopHeartbeat = null;
 
   onMount(async () => {
     try {
@@ -16,7 +18,11 @@
     } finally {
       loading = false;
     }
+    recordVisitOnce();
+    stopHeartbeat = startHeartbeat();
   });
+
+  onDestroy(() => { if (stopHeartbeat) stopHeartbeat(); });
 </script>
 
 <svelte:head><title>Bear Brew</title></svelte:head>
@@ -29,6 +35,7 @@
         <h1>Bear Brew</h1>
         <p class="tagline">What's on tap</p>
       </div>
+      <a href="/info" class="admin-link">Info</a>
       <a href="/admin" class="admin-link">Admin</a>
     </div>
     <div class="wood-strip"></div>

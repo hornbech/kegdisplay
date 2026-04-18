@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from database import engine, Base
-from routers import kegs, auth as auth_router
+from routers import kegs, auth as auth_router, stats as stats_router
 
 RECIPES_DIR = os.getenv("RECIPES_DIR", "/data/recipes")
 
@@ -44,6 +44,7 @@ app.add_middleware(
 
 app.include_router(kegs.router)
 app.include_router(auth_router.router)
+app.include_router(stats_router.router)
 
 @app.get("/api/health")
 def health():
