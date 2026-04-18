@@ -1,9 +1,12 @@
 <script>
   import KegSvg from './KegSvg.svelte';
+  import { recipeUrl } from './api.js';
   export let keg;
 
   const statusLabel = { empty: 'Empty', conditioning: 'Conditioning', on_tap: 'On Tap', archived: 'Archived' };
   const statusColor = { empty: '#555', conditioning: '#C8860A', on_tap: '#4a9e5c', archived: '#666' };
+
+  let showRecipe = false;
 
   function formatDate(d) {
     if (!d) return null;
@@ -26,6 +29,8 @@
       <p class="beer-style">{keg.style}</p>
       <div class="badges">
         <span class="badge abv">{keg.abv != null ? keg.abv.toFixed(1) : '—'}% ABV</span>
+        {#if keg.ibu != null}<span class="badge meta">{keg.ibu} IBU</span>{/if}
+        {#if keg.ebc != null}<span class="badge meta">{keg.ebc} EBC</span>{/if}
         <span class="badge status" style="background:{statusColor[keg.status]}">
           {statusLabel[keg.status]}
         </span>
@@ -39,14 +44,30 @@
       {#if keg.notes}
         <p class="notes">{keg.notes}</p>
       {/if}
-      {#if keg.untappd_url}
-        <a href={keg.untappd_url} target="_blank" rel="noopener" aria-label="View on Untappd" class="untappd-link">
-          🍺 Untappd
-        </a>
-      {/if}
+      <div class="links">
+        {#if keg.untappd_url}
+          <a href={keg.untappd_url} target="_blank" rel="noopener" class="link-btn">🍺 Untappd</a>
+        {/if}
+        {#if keg.recipe_filename}
+          <button type="button" class="link-btn" on:click={() => showRecipe = true}>📄 Recipe</button>
+        {/if}
+      </div>
     </div>
   {/if}
 </div>
+
+{#if showRecipe && keg.recipe_filename}
+  <div class="pdf-backdrop" on:click|self={() => showRecipe = false} role="dialog">
+    <div class="pdf-modal">
+      <div class="pdf-header">
+        <strong>{keg.name} — {keg.recipe_filename}</strong>
+        <a href={recipeUrl(keg.id)} target="_blank" rel="noopener" class="pdf-open">Open in new tab ↗</a>
+        <button type="button" class="pdf-close" on:click={() => showRecipe = false} aria-label="Close">✕</button>
+      </div>
+      <iframe src={recipeUrl(keg.id)} title="Recipe PDF" class="pdf-frame"></iframe>
+    </div>
+  </div>
+{/if}
 
 <style>
   .card {
@@ -83,6 +104,7 @@
   .badges { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.4rem; }
   .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
   .badge.abv { background: #333; color: var(--accent-light); }
+  .badge.meta { background: #2a2a2a; color: var(--text-muted); }
   .badge.status { color: #fff; }
 
   .date { font-size: 0.75rem; color: var(--text-muted); }
@@ -95,9 +117,36 @@
     overflow: hidden;
   }
 
-  .untappd-link {
-    display: inline-block; margin-top: 0.4rem;
+  .links { display: flex; gap: 0.6rem; justify-content: center; margin-top: 0.4rem; flex-wrap: wrap; }
+  .link-btn {
     font-size: 0.75rem; color: var(--accent);
-    text-decoration: none; border-bottom: 1px dotted var(--accent);
+    text-decoration: none; border: none; background: none; padding: 0;
+    border-bottom: 1px dotted var(--accent); cursor: pointer;
   }
+  .link-btn:hover { color: var(--accent-light); border-color: var(--accent-light); }
+
+  .pdf-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 1rem;
+  }
+  .pdf-modal {
+    background: var(--card); border-radius: var(--radius); border: 1px solid #444;
+    width: 100%; max-width: 900px; height: 90vh;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .pdf-header {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.75rem 1rem; border-bottom: 1px solid #333;
+    font-size: 0.85rem;
+  }
+  .pdf-header strong { color: var(--accent-light); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pdf-open { color: var(--accent); text-decoration: none; font-size: 0.8rem; }
+  .pdf-open:hover { color: var(--accent-light); }
+  .pdf-close {
+    background: transparent; border: 1px solid #444; color: var(--text-muted);
+    width: 28px; height: 28px; border-radius: 4px; cursor: pointer;
+  }
+  .pdf-close:hover { border-color: var(--accent); color: var(--accent); }
+  .pdf-frame { flex: 1; border: none; background: #fff; }
 </style>

@@ -1,13 +1,15 @@
 <script>
   import { onMount } from 'svelte';
   import KegSvg from '$lib/KegSvg.svelte';
-  import { fetchKegs, updateKeg, clearKeg } from '$lib/api.js';
+  import { fetchKegs, updateKeg, clearKeg, uploadRecipe, deleteRecipe, recipeUrl } from '$lib/api.js';
 
   let kegs = [];
   let editing = null;   // keg object being edited
   let saving = false;
   let error = null;
   let successMsg = null;
+  let recipeFile = null;       // pending upload (File)
+  let recipeBusy = false;
 
   onMount(async () => {
     kegs = await fetchKegs();
@@ -15,25 +17,44 @@
 
   function startEdit(keg) {
     editing = { ...keg };
+    recipeFile = null;
   }
 
   function cancelEdit() {
     editing = null;
     error = null;
+    recipeFile = null;
   }
 
   async function saveEdit() {
     saving = true; error = null; successMsg = null;
     try {
-      const updated = await updateKeg(editing.id, editing);
+      let updated = await updateKeg(editing.id, editing);
+      if (recipeFile) {
+        updated = await uploadRecipe(editing.id, recipeFile);
+      }
       kegs = kegs.map(k => k.id === updated.id ? updated : k);
       editing = null;
+      recipeFile = null;
       successMsg = 'Keg updated!';
       setTimeout(() => successMsg = null, 3000);
     } catch (e) {
-      error = 'Save failed. Check all fields.';
+      error = e?.detail?.detail || 'Save failed. Check all fields.';
     } finally {
       saving = false;
+    }
+  }
+
+  async function handleRemoveRecipe() {
+    if (!editing?.recipe_filename) return;
+    if (!confirm('Remove attached recipe PDF?')) return;
+    recipeBusy = true;
+    try {
+      const updated = await deleteRecipe(editing.id);
+      editing = { ...editing, recipe_filename: null };
+      kegs = kegs.map(k => k.id === updated.id ? updated : k);
+    } finally {
+      recipeBusy = false;
     }
   }
 
@@ -125,6 +146,8 @@
             <label>Style <input bind:value={editing.style} /></label>
             <label>ABV (%) <input type="number" step="0.1" min="0" max="100" bind:value={editing.abv} /></label>
             <label>Volume (L) <input type="number" step="0.1" min="0" bind:value={editing.volume_liters} /></label>
+            <label>IBU <input type="number" step="1" min="0" max="200" bind:value={editing.ibu} placeholder="—" /></label>
+            <label>EBC <input type="number" step="1" min="0" max="200" bind:value={editing.ebc} placeholder="—" /></label>
             <label>Brew Date <input type="date" bind:value={editing.brew_date} /></label>
             <label>Tap Date <input type="date" bind:value={editing.tap_date} /></label>
             <label>
@@ -150,6 +173,19 @@
             <label class="full">Notes
               <textarea rows="3" bind:value={editing.notes}></textarea>
             </label>
+            <div class="full recipe-row">
+              <span class="recipe-label">Recipe PDF</span>
+              {#if editing.recipe_filename && !recipeFile}
+                <a href={recipeUrl(editing.id)} target="_blank" rel="noopener" class="recipe-link">
+                  📄 {editing.recipe_filename}
+                </a>
+                <button type="button" class="danger" on:click={handleRemoveRecipe} disabled={recipeBusy}>Remove</button>
+              {/if}
+              <input type="file" accept="application/pdf" on:change={(e) => recipeFile = e.target.files?.[0] || null} />
+              {#if recipeFile}
+                <span class="pending">→ will upload <strong>{recipeFile.name}</strong> on save</span>
+              {/if}
+            </div>
           </div>
 
           <div class="modal-actions">
@@ -205,4 +241,10 @@
   .modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
   .success { color: #4a9e5c; font-size: 0.9rem; margin-bottom: 1rem; }
   .error { color: #e06060; font-size: 0.85rem; margin-bottom: 1rem; }
+
+  .recipe-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; font-size: 0.85rem; color: var(--text-muted); }
+  .recipe-label { width: 100%; }
+  .recipe-link { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
+  .recipe-link:hover { color: var(--accent-light); }
+  .pending { font-size: 0.8rem; color: var(--accent-light); }
 </style>

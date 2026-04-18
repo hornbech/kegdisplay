@@ -5,6 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.0] — 2026-04-18
+
+### Added
+
+- **IBU and EBC fields** on every keg (admin form + display badges)
+- **Recipe PDF upload** per keg:
+  - `POST /api/kegs/{id}/recipe` (auth, 10 MB PDF limit)
+  - `DELETE /api/kegs/{id}/recipe` (auth)
+  - `GET /api/kegs/{id}/recipe` (public, streams the PDF)
+  - PDFs stored at `/data/recipes/{id}.pdf` on the existing `keg_data` volume
+- Public display shows a **📄 Recipe** button that opens the PDF in an overlay (with "open in new tab" escape)
+- Admin edit modal: beer-style dropdown (34 styles, SRM-mapped colours) replaces the raw colour picker
+- Brewery renamed to **Bear Brew** (display, login, admin titles)
+
+### Changed
+
+- Idempotent `ALTER TABLE` on startup adds `ibu`, `ebc`, `recipe_filename` columns — existing databases upgrade in place, no data loss
+- nginx `client_max_body_size` raised to 15 MB to accommodate recipe uploads
+- Clearing a slot also removes its attached recipe
+
+---
+
 ## [1.0.0] — 2026-04-16
 
 Initial release of Kegdisplay — a self-hosted homebrewing keg display.

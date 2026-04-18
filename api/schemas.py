@@ -15,6 +15,9 @@ class KegBase(BaseModel):
     tap_date: Optional[str] = None
     volume_liters: float = Field(19.0, gt=0)
     color_hex: str = Field("#C8860A", pattern=r"^#[0-9A-Fa-f]{3,6}$")
+    ibu: Optional[int] = Field(None, ge=0, le=200)
+    ebc: Optional[int] = Field(None, ge=0, le=200)
+    recipe_filename: Optional[str] = None
     notes: Optional[str] = None
     untappd_url: Optional[HttpUrl] = None
     status: StatusEnum = "empty"
@@ -27,7 +30,8 @@ class KegCreate(KegBase):
 
 
 class KegUpdate(BaseModel):
-    """Full update body — slot is excluded (it's a URL path param, not client-settable)."""
+    """Full update body — slot is excluded (it's a URL path param, not client-settable).
+    recipe_filename is read-only here — it's managed by the upload/delete endpoints."""
     name: str = ""
     style: str = ""
     abv: float = Field(0.0, ge=0.0, le=100.0)
@@ -35,6 +39,8 @@ class KegUpdate(BaseModel):
     tap_date: Optional[str] = None
     volume_liters: float = Field(19.0, gt=0)
     color_hex: str = Field("#C8860A", pattern=r"^#[0-9A-Fa-f]{3,6}$")
+    ibu: Optional[int] = Field(None, ge=0, le=200)
+    ebc: Optional[int] = Field(None, ge=0, le=200)
     notes: Optional[str] = None
     untappd_url: Optional[HttpUrl] = None
     status: StatusEnum = "empty"

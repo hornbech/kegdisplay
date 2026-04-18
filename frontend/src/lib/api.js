@@ -29,3 +29,19 @@ export const patchKegStatus = (id, status) => request(`/kegs/${id}`, { method: '
 export const clearKeg = (id) => request(`/kegs/${id}`, { method: 'DELETE' });
 export const login = (username, password) =>
   request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+
+export async function uploadRecipe(id, file) {
+  const token = getToken();
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${BASE}/kegs/${id}/recipe`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => ({})));
+  return res.json();
+}
+
+export const deleteRecipe = (id) => request(`/kegs/${id}/recipe`, { method: 'DELETE' });
+export const recipeUrl = (id) => `${BASE}/kegs/${id}/recipe`;

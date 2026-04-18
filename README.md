@@ -25,6 +25,39 @@ Built with FastAPI + SvelteKit + Docker Compose.
 
 Point your domain to `http://<host>:3000`. The frontend proxies `/api` to the backend automatically.
 
+## Editing a keg
+
+Each keg supports: name, style (free text), ABV, volume, brew/tap dates,
+IBU, EBC, colour (picked via beer-style dropdown), notes, an Untappd link,
+and an optional **recipe PDF** (≤10 MB). Upload the PDF from the admin
+edit modal — it becomes clickable from the public display as a 📄 Recipe
+button that opens in an overlay.
+
+PDFs live under `/data/recipes/{id}.pdf` on the `keg_data` volume and
+are included in the backup below.
+
+## `.env` gotcha: bcrypt `$` escaping
+
+Docker Compose interpolates `$VAR` references inside `.env` values. The
+bcrypt hash contains several `$` characters, so each one must be doubled
+(`$` → `$$`) in `.env`:
+
+```
+ADMIN_PASSWORD_HASH=$$2b$$12$$YourHashHere...
+```
+
+Or run this after pasting the raw hash:
+
+```bash
+sed -i '/^ADMIN_PASSWORD_HASH=/ s/\$/$$/g' .env
+```
+
+Verify the container receives the unescaped form (`$2b$...`):
+
+```bash
+docker compose exec api printenv ADMIN_PASSWORD_HASH
+```
+
 ## Backup
 
 ```bash
