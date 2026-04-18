@@ -19,14 +19,14 @@
   });
 </script>
 
-<svelte:head><title>Jacob's Brewery</title></svelte:head>
+<svelte:head><title>Bear Brew</title></svelte:head>
 
 <main>
   <header>
     <div class="header-inner">
       <div class="logo">🍺</div>
       <div>
-        <h1>Jacob's Brewery</h1>
+        <h1>Bear Brew</h1>
         <p class="tagline">What's on tap</p>
       </div>
       <a href="/admin" class="admin-link">Admin</a>

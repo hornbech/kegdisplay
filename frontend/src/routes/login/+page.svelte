@@ -19,7 +19,7 @@
   }
 </script>
 
-<svelte:head><title>Login — Jacob's Brewery</title></svelte:head>
+<svelte:head><title>Login — Bear Brew</title></svelte:head>
 
 <div class="page">
   <div class="card">

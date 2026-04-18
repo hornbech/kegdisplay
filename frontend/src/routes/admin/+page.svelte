@@ -44,9 +44,47 @@
   }
 
   const statusOptions = ['empty', 'conditioning', 'on_tap', 'archived'];
+
+  // Beer styles ordered light → dark, colours picked from the SRM scale.
+  const beerStyles = [
+    { name: 'Pale Lager',           color: '#F3F993' },
+    { name: 'Pilsner',              color: '#F5E73C' },
+    { name: 'Witbier',              color: '#F3E7AF' },
+    { name: 'Berliner Weisse',      color: '#F5E73C' },
+    { name: 'Gose',                 color: '#F5E73C' },
+    { name: 'Helles',               color: '#F3C04F' },
+    { name: 'Blonde Ale',           color: '#F5F75C' },
+    { name: 'Kölsch',               color: '#EACA5E' },
+    { name: 'Hefeweizen',           color: '#E6CE55' },
+    { name: 'Saison',               color: '#E6B825' },
+    { name: 'Belgian Tripel',       color: '#E6B825' },
+    { name: 'American Pale Ale',    color: '#D5BC26' },
+    { name: 'Session IPA',          color: '#D5BC26' },
+    { name: 'Hazy IPA / NEIPA',     color: '#E8B55A' },
+    { name: 'IPA',                  color: '#BF813A' },
+    { name: 'Double IPA',           color: '#BF813A' },
+    { name: 'English Bitter / ESB', color: '#BC6733' },
+    { name: 'Vienna Lager',         color: '#B26033' },
+    { name: 'Märzen / Oktoberfest', color: '#B26033' },
+    { name: 'Amber Ale',            color: '#8D4C32' },
+    { name: 'Red Ale',              color: '#8D4C32' },
+    { name: 'Barleywine',           color: '#8D4C32' },
+    { name: 'Bock',                 color: '#7C3F00' },
+    { name: 'Belgian Dubbel',       color: '#7C3F00' },
+    { name: 'Dunkel',               color: '#5D341A' },
+    { name: 'Doppelbock',           color: '#5D341A' },
+    { name: 'Brown Ale',            color: '#5D341A' },
+    { name: 'Porter',               color: '#3B1F1A' },
+    { name: 'Belgian Quadrupel',    color: '#3B1F1A' },
+    { name: 'Baltic Porter',        color: '#261716' },
+    { name: 'Dry Stout',            color: '#1F1210' },
+    { name: 'Milk Stout',           color: '#1F1210' },
+    { name: 'Oatmeal Stout',        color: '#1F1210' },
+    { name: 'Imperial Stout',       color: '#030403' },
+  ];
 </script>
 
-<svelte:head><title>Admin — Jacob's Brewery</title></svelte:head>
+<svelte:head><title>Admin — Bear Brew</title></svelte:head>
 
 <main>
   <div class="container">
@@ -92,8 +130,12 @@
             <label>
               Beer Colour
               <div class="color-row">
-                <input type="color" bind:value={editing.color_hex} />
-                <input type="text" bind:value={editing.color_hex} placeholder="#C8860A" style="width:100px" />
+                <span class="swatch" style="background:{editing.color_hex || '#444'}"></span>
+                <select bind:value={editing.color_hex}>
+                  {#each beerStyles as bs}
+                    <option value={bs.color}>{bs.name}</option>
+                  {/each}
+                </select>
               </div>
             </label>
             <label>
@@ -158,7 +200,7 @@
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
   textarea { resize: vertical; font-family: var(--font-body); }
   .color-row { display: flex; gap: 0.5rem; align-items: center; }
-  input[type="color"] { width: 44px; height: 36px; padding: 2px; cursor: pointer; }
+  .swatch { display: inline-block; width: 36px; height: 36px; border-radius: 6px; border: 1px solid #444; flex-shrink: 0; }
 
   .modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
   .success { color: #4a9e5c; font-size: 0.9rem; margin-bottom: 1rem; }
