@@ -15,7 +15,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Public display redesigned** — "Refined Craft Tavern" direction from the Claude Design handoff:
   - Radial chalkboard background with brass accents
-  - "Bear Brew." wordmark in italic Playfair Display, with tagline (Est. 2019 · Copenhagen · Eight taps. No shortcuts.) and "currently pouring N/8" counter
+  - "Bear Brew." wordmark in italic Playfair Display, with tagline (Est. 2019 · Aalborg · Eight taps. No shortcuts.) and "currently pouring N/8" counter
   - Ornate "TAP NN" slot tags (brass when on-tap)
   - Stats row with hairline-divided ABV / age / fill meter
   - Tasting notes styled as italic pull-quotes

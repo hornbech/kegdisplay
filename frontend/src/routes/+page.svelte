@@ -44,7 +44,7 @@
       <div class="tagline">
         <span>Est. 2019</span>
         <span class="bullet"></span>
-        <span>Copenhagen</span>
+        <span>Aalborg</span>
         <span class="bullet"></span>
         <span>Eight taps. No shortcuts.</span>
       </div>
