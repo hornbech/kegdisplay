@@ -13,7 +13,7 @@ class KegBase(BaseModel):
     # Stored as ISO date strings (YYYY-MM-DD)
     brew_date: Optional[str] = None
     tap_date: Optional[str] = None
-    volume_liters: float = Field(19.0, gt=0, le=50)
+    volume_liters: float = Field(19.0, gt=0, le=19)
     color_hex: str = Field("#C8860A", pattern=r"^#[0-9A-Fa-f]{3,6}$")
     ibu: Optional[int] = Field(None, ge=0, le=500)
     ebc: Optional[int] = Field(None, ge=0, le=500)
@@ -37,7 +37,7 @@ class KegUpdate(BaseModel):
     abv: float = Field(0.0, ge=0.0, le=100.0)
     brew_date: Optional[str] = None
     tap_date: Optional[str] = None
-    volume_liters: float = Field(19.0, gt=0, le=50)
+    volume_liters: float = Field(19.0, gt=0, le=19)
     color_hex: str = Field("#C8860A", pattern=r"^#[0-9A-Fa-f]{3,6}$")
     ibu: Optional[int] = Field(None, ge=0, le=500)
     ebc: Optional[int] = Field(None, ge=0, le=500)

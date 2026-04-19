@@ -161,7 +161,7 @@
             <label>Beer Name <input bind:value={editing.name} /></label>
             <label>Style <input bind:value={editing.style} /></label>
             <label>ABV (%) <input type="number" step="0.1" min="0" max="100" bind:value={editing.abv} /></label>
-            <label>Volume (L) <input type="number" step="0.1" min="0" max="50" bind:value={editing.volume_liters} /></label>
+            <label>Volume (L) <input type="number" step="0.1" min="0" max="19" bind:value={editing.volume_liters} /></label>
             <label>IBU <input type="number" step="1" min="0" max="200" bind:value={editing.ibu} placeholder="—" /></label>
             <label>EBC <input type="number" step="1" min="0" max="200" bind:value={editing.ebc} placeholder="—" /></label>
             <label>Brew Date <input type="date" bind:value={editing.brew_date} /></label>
