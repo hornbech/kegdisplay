@@ -3,11 +3,11 @@
   import { recipeUrl } from './api.js';
   export let keg;
 
-  const today = new Date();
+  const FULL_KEG_LITERS = 19;
 
   function daysSince(iso) {
     if (!iso) return null;
-    return Math.floor((today - new Date(iso)) / 86400000);
+    return Math.floor((new Date() - new Date(iso)) / 86400000);
   }
   function humanAge(days) {
     if (days == null) return '—';
@@ -22,8 +22,7 @@
     if (k.status === 'archived') return 0.08;
     if (k.status === 'conditioning') return 0.95;
     if (k.status === 'fermenting') return 0.92;
-    const varied = { 1: 0.62, 2: 0.35, 3: 0.78, 4: 0.48, 5: 0.55, 6: 0.2, 7: 0.7, 8: 0.4 };
-    return varied[k.slot] ?? 0.55;
+    return Math.min(1, Math.max(0, (k.volume_liters ?? FULL_KEG_LITERS) / FULL_KEG_LITERS));
   }
 
   $: isEmpty = keg.status === 'empty';
@@ -100,8 +99,10 @@
   </div>
 </div>
 
+<svelte:window on:keydown={(e) => { if (e.key === 'Escape' && showRecipe) showRecipe = false; }} />
+
 {#if showRecipe && keg.recipe_filename}
-  <div class="pdf-backdrop" on:click|self={() => showRecipe = false} role="dialog">
+  <div class="pdf-backdrop" on:click|self={() => showRecipe = false} role="dialog" aria-modal="true" aria-label="Recipe PDF">
     <div class="pdf-modal">
       <div class="pdf-header">
         <strong>{keg.name} — {keg.recipe_filename}</strong>

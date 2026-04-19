@@ -1,7 +1,8 @@
 <script>
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import KegSvg from '$lib/KegSvg.svelte';
-  import { fetchKegs, updateKeg, clearKeg, uploadRecipe, deleteRecipe, recipeUrl } from '$lib/api.js';
+  import { fetchKegs, updateKeg, clearKeg, uploadRecipe, deleteRecipe, recipeUrl, isLoggedIn } from '$lib/api.js';
 
   let kegs = [];
   let editing = null;   // keg object being edited
@@ -11,7 +12,18 @@
   let recipeFile = null;       // pending upload (File)
   let recipeBusy = false;
 
+  const FULL_KEG_LITERS = 19;
+
+  function adminFill(keg) {
+    if (keg.status === 'empty') return 0;
+    if (keg.status === 'archived') return 0.08;
+    if (keg.status === 'conditioning') return 0.95;
+    if (keg.status === 'fermenting') return 0.92;
+    return Math.min(1, Math.max(0, (keg.volume_liters ?? FULL_KEG_LITERS) / FULL_KEG_LITERS));
+  }
+
   onMount(async () => {
+    if (!isLoggedIn()) { goto('/login'); return; }
     kegs = await fetchKegs();
   });
 
@@ -39,7 +51,10 @@
       successMsg = 'Keg updated!';
       setTimeout(() => successMsg = null, 3000);
     } catch (e) {
-      error = e?.detail?.detail || 'Save failed. Check all fields.';
+      const d = e?.detail?.detail;
+      error = Array.isArray(d)
+        ? d.map(v => v.msg).join('; ')
+        : (d || 'Save failed. Check all fields.');
     } finally {
       saving = false;
     }
@@ -106,6 +121,7 @@
 </script>
 
 <svelte:head><title>Admin — Bear Brew</title></svelte:head>
+<svelte:window on:keydown={(e) => { if (e.key === 'Escape' && editing) cancelEdit(); }} />
 
 <main>
   <div class="container">
@@ -116,7 +132,7 @@
       {#each kegs as keg (keg.id)}
         <div class="keg-row">
           <div class="keg-preview">
-            <KegSvg color={keg.color_hex} status={keg.status} slot={keg.slot} />
+            <KegSvg color={keg.color_hex} status={keg.status} slot={keg.slot} fill={adminFill(keg)} />
             <span class="slot">Slot #{keg.slot}</span>
           </div>
           <div class="keg-summary">
@@ -145,7 +161,7 @@
             <label>Beer Name <input bind:value={editing.name} /></label>
             <label>Style <input bind:value={editing.style} /></label>
             <label>ABV (%) <input type="number" step="0.1" min="0" max="100" bind:value={editing.abv} /></label>
-            <label>Volume (L) <input type="number" step="0.1" min="0" bind:value={editing.volume_liters} /></label>
+            <label>Volume (L) <input type="number" step="0.1" min="0" max="50" bind:value={editing.volume_liters} /></label>
             <label>IBU <input type="number" step="1" min="0" max="200" bind:value={editing.ibu} placeholder="—" /></label>
             <label>EBC <input type="number" step="1" min="0" max="200" bind:value={editing.ebc} placeholder="—" /></label>
             <label>Brew Date <input type="date" bind:value={editing.brew_date} /></label>

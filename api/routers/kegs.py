@@ -63,7 +63,7 @@ def update_keg(keg_id: int, body: KegUpdate, db: Session = Depends(get_db),
     if not keg:
         raise HTTPException(status_code=404, detail="Keg not found")
     # slot is excluded from KegUpdate — it's a fixed URL path param, not client-settable
-    for field, value in body.model_dump().items():
+    for field, value in body.model_dump(mode='json').items():
         setattr(keg, field, value)
     db.commit()
     db.refresh(keg)

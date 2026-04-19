@@ -9,20 +9,27 @@
   let error = null;
   let loading = true;
   let stopHeartbeat = null;
+  let refreshInterval = null;
 
   onMount(async () => {
     try {
       kegs = await fetchKegs();
+      await recordVisitOnce();
+      stopHeartbeat = startHeartbeat();
+      refreshInterval = setInterval(async () => {
+        try { kegs = await fetchKegs(); } catch {}
+      }, 60_000);
     } catch (e) {
       error = 'Could not load kegs. Is the API running?';
     } finally {
       loading = false;
     }
-    recordVisitOnce();
-    stopHeartbeat = startHeartbeat();
   });
 
-  onDestroy(() => { if (stopHeartbeat) stopHeartbeat(); });
+  onDestroy(() => {
+    if (stopHeartbeat) stopHeartbeat();
+    if (refreshInterval) clearInterval(refreshInterval);
+  });
 
   $: onTapCount = kegs.filter(k => k.status === 'on_tap').length;
   $: totalSlots = kegs.length || 8;
