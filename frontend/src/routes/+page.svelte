@@ -49,7 +49,7 @@
     <div class="wordmark">
       <h1 class="brand">Bear Brew<span class="brand-dot">.</span></h1>
       <div class="tagline">
-        <span>Est. 2019</span>
+        <span>Est. 2016</span>
         <span class="bullet"></span>
         <span>Aalborg</span>
         <span class="bullet"></span>
