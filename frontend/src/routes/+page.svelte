@@ -32,7 +32,7 @@
   });
 
   $: onTapCount = kegs.filter(k => k.status === 'on_tap').length;
-  $: totalSlots = kegs.length || 8;
+  $: totalSlots = kegs.length || 10;
 </script>
 
 <svelte:head><title>Bear Brew</title></svelte:head>
@@ -53,7 +53,7 @@
         <span class="bullet"></span>
         <span>Aalborg</span>
         <span class="bullet"></span>
-        <span>Eight taps. No shortcuts.</span>
+        <span>Ten taps. No shortcuts.</span>
       </div>
     </div>
 

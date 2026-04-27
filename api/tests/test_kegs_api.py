@@ -50,10 +50,10 @@ def test_health():
     assert r.status_code == 200
 
 
-def test_get_kegs_returns_8_slots():
+def test_get_kegs_returns_10_slots():
     r = client.get("/api/kegs")
     assert r.status_code == 200
-    assert len(r.json()) == 8
+    assert len(r.json()) == 10
 
 
 def test_get_keg_by_id():

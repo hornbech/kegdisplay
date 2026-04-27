@@ -6,7 +6,7 @@ StatusEnum = Literal["empty", "fermenting", "conditioning", "on_tap", "archived"
 
 
 class KegBase(BaseModel):
-    slot: int = Field(..., ge=1, le=8)
+    slot: int = Field(..., ge=1, le=10)
     name: str = ""
     style: str = ""
     abv: float = Field(0.0, ge=0.0, le=100.0)

@@ -30,10 +30,10 @@ def _require_auth(credentials: HTTPAuthorizationCredentials = Depends(_bearer)) 
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-def _ensure_8_slots(db: Session):
-    """Seed all 8 slots if any are missing. Queries only the slot column for efficiency."""
+def _ensure_10_slots(db: Session):
+    """Seed all 10 slots if any are missing. Queries only the slot column for efficiency."""
     existing = {row[0] for row in db.query(Keg.slot).all()}
-    for slot in range(1, 9):
+    for slot in range(1, 11):
         if slot not in existing:
             db.add(Keg(slot=slot, name="", style="", abv=0.0,
                        color_hex="#555555", status="empty"))
@@ -42,13 +42,13 @@ def _ensure_8_slots(db: Session):
 
 @router.get("", response_model=List[KegOut])
 def list_kegs(db: Session = Depends(get_db)):
-    _ensure_8_slots(db)
+    _ensure_10_slots(db)
     return db.query(Keg).order_by(Keg.slot).all()
 
 
 @router.get("/{keg_id}", response_model=KegOut)
 def get_keg(keg_id: int, db: Session = Depends(get_db)):
-    _ensure_8_slots(db)
+    _ensure_10_slots(db)
     keg = db.query(Keg).filter(Keg.id == keg_id).first()
     if not keg:
         raise HTTPException(status_code=404, detail="Keg not found")
@@ -58,7 +58,7 @@ def get_keg(keg_id: int, db: Session = Depends(get_db)):
 @router.put("/{keg_id}", response_model=KegOut)
 def update_keg(keg_id: int, body: KegUpdate, db: Session = Depends(get_db),
                user: str = Depends(_require_auth)):
-    _ensure_8_slots(db)
+    _ensure_10_slots(db)
     keg = db.query(Keg).filter(Keg.id == keg_id).first()
     if not keg:
         raise HTTPException(status_code=404, detail="Keg not found")
@@ -74,7 +74,7 @@ def update_keg(keg_id: int, body: KegUpdate, db: Session = Depends(get_db),
 def update_keg_status(keg_id: int, body: KegStatusUpdate,
                       db: Session = Depends(get_db),
                       user: str = Depends(_require_auth)):
-    _ensure_8_slots(db)
+    _ensure_10_slots(db)
     keg = db.query(Keg).filter(Keg.id == keg_id).first()
     if not keg:
         raise HTTPException(status_code=404, detail="Keg not found")
@@ -87,7 +87,7 @@ def update_keg_status(keg_id: int, body: KegStatusUpdate,
 @router.delete("/{keg_id}", response_model=KegOut)
 def clear_keg(keg_id: int, db: Session = Depends(get_db),
               user: str = Depends(_require_auth)):
-    _ensure_8_slots(db)
+    _ensure_10_slots(db)
     keg = db.query(Keg).filter(Keg.id == keg_id).first()
     if not keg:
         raise HTTPException(status_code=404, detail="Keg not found")
