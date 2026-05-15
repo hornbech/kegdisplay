@@ -38,3 +38,14 @@ class Stat(Base):
 
     key = Column(Text, primary_key=True)
     value = Column(Integer, nullable=False, default=0)
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    keg_id = Column(Integer, nullable=False)
+    name = Column(Text, nullable=False)
+    stars = Column(Integer, nullable=False)
+    comment = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utcnow)
