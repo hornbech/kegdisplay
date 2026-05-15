@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 from typing import Optional, Literal
 from datetime import datetime
 
@@ -54,6 +54,8 @@ class KegOut(KegBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    avg_stars: Optional[float] = None
+    review_count: int = 0
 
 
 class TokenOut(BaseModel):
@@ -64,3 +66,30 @@ class TokenOut(BaseModel):
 class LoginIn(BaseModel):
     username: str
     password: str
+
+
+class ReviewCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=80)
+    stars: int = Field(..., ge=1, le=5)
+    comment: Optional[str] = Field(None, max_length=500)
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("name must not be blank")
+        return v
+
+    model_config = {"from_attributes": True}
+
+
+class ReviewOut(BaseModel):
+    id: int
+    keg_id: int
+    name: str
+    stars: int
+    comment: Optional[str] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
