@@ -45,3 +45,9 @@ export async function uploadRecipe(id, file) {
 
 export const deleteRecipe = (id) => request(`/kegs/${id}/recipe`, { method: 'DELETE' });
 export const recipeUrl = (id) => `${BASE}/kegs/${id}/recipe`;
+
+export const fetchReviews = (kegId) => request(`/kegs/${kegId}/reviews`);
+export const submitReview = (kegId, data) =>
+  request(`/kegs/${kegId}/reviews`, { method: 'POST', body: JSON.stringify(data) });
+export const deleteReview = (reviewId) =>
+  request(`/reviews/${reviewId}`, { method: 'DELETE' });
