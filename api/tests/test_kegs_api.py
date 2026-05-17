@@ -208,3 +208,31 @@ def test_recipe_upload_requires_auth(tmp_path, monkeypatch):
         files={"file": ("recipe.pdf", b"%PDF-1.4", "application/pdf")},
     )
     assert r.status_code == 401
+
+
+def test_keg_list_has_review_fields_when_empty():
+    kegs = client.get("/api/kegs").json()
+    assert kegs[0]["avg_stars"] is None
+    assert kegs[0]["review_count"] == 0
+
+
+def test_keg_list_avg_stars_computed():
+    kegs_data = client.get("/api/kegs").json()
+    keg_id = kegs_data[0]["id"]
+    client.post(f"/api/kegs/{keg_id}/reviews", json={"name": "A", "stars": 4})
+    client.post(f"/api/kegs/{keg_id}/reviews", json={"name": "B", "stars": 2})
+    kegs_data = client.get("/api/kegs").json()
+    k = next(k for k in kegs_data if k["id"] == keg_id)
+    assert k["avg_stars"] == 3.0
+    assert k["review_count"] == 2
+
+
+def test_get_keg_by_id_has_review_fields():
+    kegs_data = client.get("/api/kegs").json()
+    keg_id = kegs_data[0]["id"]
+    client.post(f"/api/kegs/{keg_id}/reviews", json={"name": "A", "stars": 5})
+    r = client.get(f"/api/kegs/{keg_id}")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["avg_stars"] == 5.0
+    assert data["review_count"] == 1

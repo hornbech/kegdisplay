@@ -2,10 +2,11 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
-from models import Keg
+from models import Keg, Review
 from schemas import KegOut, KegUpdate, KegStatusUpdate
 from auth import get_current_user
 from jose import JWTError
@@ -40,10 +41,34 @@ def _ensure_10_slots(db: Session):
     db.commit()
 
 
+def _attach_review_stats(kegs: list, db: Session) -> list:
+    if not kegs:
+        return kegs
+    ids = [k.id for k in kegs]
+    stats = {
+        keg_id: (avg, count)
+        for keg_id, avg, count in db.query(
+            Review.keg_id,
+            func.avg(Review.stars),
+            func.count(Review.id),
+        )
+        .filter(Review.keg_id.in_(ids))
+        .group_by(Review.keg_id)
+        .all()
+    }
+    for keg in kegs:
+        avg, count = stats.get(keg.id, (None, 0))
+        keg.avg_stars = round(float(avg), 1) if avg is not None else None
+        keg.review_count = count
+    return kegs
+
+
 @router.get("", response_model=List[KegOut])
 def list_kegs(db: Session = Depends(get_db)):
     _ensure_10_slots(db)
-    return db.query(Keg).order_by(Keg.slot).all()
+    kegs = db.query(Keg).order_by(Keg.slot).all()
+    _attach_review_stats(kegs, db)
+    return kegs
 
 
 @router.get("/{keg_id}", response_model=KegOut)
@@ -52,6 +77,7 @@ def get_keg(keg_id: int, db: Session = Depends(get_db)):
     keg = db.query(Keg).filter(Keg.id == keg_id).first()
     if not keg:
         raise HTTPException(status_code=404, detail="Keg not found")
+    _attach_review_stats([keg], db)
     return keg
 
 
