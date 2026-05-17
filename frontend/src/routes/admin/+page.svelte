@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import KegSvg from '$lib/KegSvg.svelte';
-  import { fetchKegs, updateKeg, clearKeg, uploadRecipe, deleteRecipe, recipeUrl, isLoggedIn } from '$lib/api.js';
+  import { fetchKegs, updateKeg, clearKeg, uploadRecipe, deleteRecipe, recipeUrl, isLoggedIn, fetchReviews, deleteReview } from '$lib/api.js';
 
   let kegs = [];
   let editing = null;   // keg object being edited
@@ -79,6 +79,19 @@
     kegs = kegs.map(k => k.id === updated.id ? updated : k);
   }
 
+  let kegReviews = {};   // { [keg_id]: Review[] }
+
+  async function loadReviews(kegId) {
+    kegReviews[kegId] = await fetchReviews(kegId);
+    kegReviews = kegReviews;
+  }
+
+  async function handleDeleteReview(kegId, reviewId) {
+    await deleteReview(reviewId);
+    kegReviews[kegId] = (kegReviews[kegId] ?? []).filter(r => r.id !== reviewId);
+    kegReviews = kegReviews;
+  }
+
   const statusOptions = ['empty', 'fermenting', 'conditioning', 'on_tap', 'archived'];
 
   // Beer styles ordered light → dark, colours picked from the SRM scale.
@@ -143,6 +156,28 @@
           <div class="keg-actions">
             <button on:click={() => startEdit(keg)}>Edit</button>
             <button class="danger" on:click={() => handleClear(keg)}>Clear</button>
+          </div>
+          <!-- Reviews -->
+          <div class="admin-reviews">
+            <button type="button" class="review-load-btn"
+              on:click={() => kegReviews[keg.id] ? (kegReviews[keg.id] = undefined, kegReviews = kegReviews) : loadReviews(keg.id)}>
+              {kegReviews[keg.id] ? 'Hide' : `Reviews (${keg.review_count ?? 0})`}
+            </button>
+            {#if kegReviews[keg.id]}
+              {#if kegReviews[keg.id].length === 0}
+                <p class="no-reviews-admin">No reviews.</p>
+              {/if}
+              {#each kegReviews[keg.id] as rev (rev.id)}
+                <div class="admin-review-row">
+                  <span class="rev-name">{rev.name}</span>
+                  <span class="rev-stars">{'★'.repeat(rev.stars)}{'☆'.repeat(5 - rev.stars)}</span>
+                  {#if rev.comment}<span class="rev-comment">"{rev.comment}"</span>{/if}
+                  <button type="button" class="rev-delete"
+                    on:click={() => handleDeleteReview(keg.id, rev.id)}
+                    title="Delete review">✕</button>
+                </div>
+              {/each}
+            {/if}
           </div>
         </div>
       {/each}
@@ -264,4 +299,24 @@
   .recipe-link { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
   .recipe-link:hover { color: var(--accent-light); }
   .pending { font-size: 0.8rem; color: var(--accent-light); }
+
+  .admin-reviews { margin-top: 10px; border-top: 1px solid rgba(200,134,10,0.15); padding-top: 8px; }
+  .review-load-btn {
+    background: none; border: 1px solid rgba(200,134,10,0.2);
+    color: #9a8668; font-size: 11px; padding: 3px 10px; border-radius: 3px; cursor: pointer;
+  }
+  .review-load-btn:hover { border-color: rgba(200,134,10,0.5); color: #e8a020; }
+  .no-reviews-admin { font-size: 11px; color: #5a4a33; font-style: italic; margin: 4px 0; }
+  .admin-review-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 4px 0; border-bottom: 1px solid rgba(200,134,10,0.08); font-size: 12px;
+  }
+  .rev-name { color: #c8b080; font-weight: 600; }
+  .rev-stars { color: #c8860a; letter-spacing: 1px; }
+  .rev-comment { color: #9a8668; font-style: italic; flex: 1; }
+  .rev-delete {
+    margin-left: auto; background: none; border: none;
+    color: #804040; cursor: pointer; font-size: 13px; padding: 0 4px;
+  }
+  .rev-delete:hover { color: #e06060; }
 </style>
