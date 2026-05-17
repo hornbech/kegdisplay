@@ -134,3 +134,8 @@ def test_delete_review_404():
 def test_review_on_unknown_keg():
     r = client.post("/api/kegs/99999/reviews", json={"name": "Alice", "stars": 3})
     assert r.status_code == 404
+
+
+def test_list_reviews_unknown_keg():
+    r = client.get("/api/kegs/99999/reviews")
+    assert r.status_code == 404
