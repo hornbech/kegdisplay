@@ -1,6 +1,7 @@
 <script>
   import KegSvg from './KegSvg.svelte';
-  import { recipeUrl } from './api.js';
+  import StarRating from './StarRating.svelte';
+  import { recipeUrl, fetchReviews, submitReview } from './api.js';
   export let keg;
 
   const FULL_KEG_LITERS = 19;
@@ -41,6 +42,60 @@
   }[keg.status] ?? '';
 
   let showRecipe = false;
+  let showReviews = false;
+  let reviews = [];
+  let reviewsLoaded = false;
+  let reviewForm = { name: '', stars: 0, comment: '' };
+  let reviewSubmitting = false;
+  let reviewError = null;
+  let reviewSuccess = false;
+  let showAllReviews = false;
+
+  async function toggleReviews() {
+    showReviews = !showReviews;
+    if (showReviews && !reviewsLoaded) {
+      reviews = await fetchReviews(keg.id);
+      reviewsLoaded = true;
+    }
+  }
+
+  async function handleSubmitReview() {
+    if (!reviewForm.name.trim() || reviewForm.stars === 0) {
+      reviewError = 'Name and a star rating are required.';
+      return;
+    }
+    reviewSubmitting = true;
+    reviewError = null;
+    try {
+      const created = await submitReview(keg.id, {
+        name: reviewForm.name.trim(),
+        stars: reviewForm.stars,
+        comment: reviewForm.comment.trim() || null,
+      });
+      reviews = [created, ...reviews];
+      reviewForm = { name: '', stars: 0, comment: '' };
+      reviewSuccess = true;
+      setTimeout(() => reviewSuccess = false, 3000);
+    } catch (e) {
+      reviewError = 'Could not submit review. Please try again.';
+    } finally {
+      reviewSubmitting = false;
+    }
+  }
+
+  function relativeDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const diff = Math.floor((Date.now() - d) / 86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    if (diff < 30) return `${diff}d ago`;
+    return d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  }
+
+  $: displayedReviews = showAllReviews ? reviews : reviews.slice(0, 5);
+  $: avgStars = keg.avg_stars;
+  $: reviewCount = keg.review_count ?? 0;
 </script>
 
 <div class="card" class:empty={isEmpty} class:archived={isArchived}>
@@ -95,6 +150,68 @@
       {#if keg.notes}
         <p class="notes">"{keg.notes}"</p>
       {/if}
+
+      <!-- Review strip -->
+      <div class="review-strip">
+        <button type="button" class="review-toggle" on:click={toggleReviews}>
+          <StarRating value={avgStars ?? 0} />
+          {#if reviewCount > 0}
+            <span class="review-meta">{avgStars} ★ ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})</span>
+          {:else}
+            <span class="review-meta no-reviews">No reviews yet</span>
+          {/if}
+          <span class="chevron">{showReviews ? '▲' : '▼'}</span>
+        </button>
+
+        {#if showReviews}
+          <div class="review-panel">
+            {#each displayedReviews as rev (rev.id)}
+              <div class="review-item">
+                <div class="review-header">
+                  <strong>{rev.name}</strong>
+                  <StarRating value={rev.stars} />
+                  <span class="review-date">{relativeDate(rev.created_at)}</span>
+                </div>
+                {#if rev.comment}<p class="review-comment">"{rev.comment}"</p>{/if}
+              </div>
+            {/each}
+            {#if reviews.length > 5 && !showAllReviews}
+              <button type="button" class="show-all" on:click={() => showAllReviews = true}>
+                Show all {reviews.length} reviews
+              </button>
+            {/if}
+
+            <div class="review-form">
+              <div class="form-row">
+                <input
+                  class="form-input"
+                  placeholder="Your name"
+                  bind:value={reviewForm.name}
+                  maxlength="80"
+                />
+                <StarRating value={reviewForm.stars} interactive on:change={(e) => reviewForm.stars = e.detail} />
+              </div>
+              <textarea
+                class="form-textarea"
+                placeholder="Tasting notes (optional)"
+                bind:value={reviewForm.comment}
+                maxlength="500"
+                rows="2"
+              ></textarea>
+              {#if reviewError}<p class="form-error">{reviewError}</p>{/if}
+              {#if reviewSuccess}<p class="form-success">Review posted!</p>{/if}
+              <button
+                type="button"
+                class="submit-btn"
+                on:click={handleSubmitReview}
+                disabled={reviewSubmitting}
+              >
+                {reviewSubmitting ? 'Posting…' : 'Post review'}
+              </button>
+            </div>
+          </div>
+        {/if}
+      </div>
     {/if}
   </div>
 </div>
@@ -262,4 +379,53 @@
   }
   .pdf-close:hover { border-color: #c8860a; color: #c8860a; }
   .pdf-frame { flex: 1; border: none; background: #fff; }
+
+  .review-strip { margin-top: 10px; border-top: 1px solid rgba(200,134,10,0.15); padding-top: 8px; }
+
+  .review-toggle {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: none; cursor: pointer;
+    color: #9a8668; font-size: 12px; padding: 0; width: 100%; text-align: left;
+  }
+  .review-toggle:hover { color: #e8a020; }
+  .review-meta { font-size: 11px; color: #7a6a54; }
+  .review-meta.no-reviews { font-style: italic; }
+  .chevron { margin-left: auto; font-size: 9px; color: #5a4a33; }
+
+  .review-panel { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+
+  .review-item { padding: 6px 0; border-bottom: 1px solid rgba(200,134,10,0.08); }
+  .review-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .review-header strong { font-size: 12px; color: #c8b080; }
+  .review-date { font-size: 10px; color: #5a4a33; margin-left: auto; }
+  .review-comment { margin: 4px 0 0; font-size: 11px; color: #9a8668; font-style: italic; }
+
+  .show-all {
+    background: none; border: none; cursor: pointer;
+    font-size: 11px; color: #7a6a54; text-decoration: underline; padding: 0;
+  }
+
+  .review-form { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+  .form-row { display: flex; align-items: center; gap: 8px; }
+  .form-input {
+    flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(200,134,10,0.2);
+    color: #f0e3c8; padding: 5px 8px; border-radius: 3px; font-size: 12px;
+  }
+  .form-input::placeholder { color: #5a4a33; }
+  .form-textarea {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(200,134,10,0.2);
+    color: #f0e3c8; padding: 5px 8px; border-radius: 3px; font-size: 12px;
+    resize: vertical; font-family: inherit;
+  }
+  .form-textarea::placeholder { color: #5a4a33; }
+  .form-error { font-size: 11px; color: #e06060; margin: 0; }
+  .form-success { font-size: 11px; color: #6abf6a; margin: 0; }
+  .submit-btn {
+    align-self: flex-start;
+    background: rgba(200,134,10,0.15); border: 1px solid rgba(200,134,10,0.35);
+    color: #e8a020; padding: 5px 14px; border-radius: 3px; font-size: 12px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .submit-btn:hover:not(:disabled) { background: rgba(200,134,10,0.28); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
